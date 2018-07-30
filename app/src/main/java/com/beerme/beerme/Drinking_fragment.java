@@ -22,7 +22,7 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
-
+//hi yes this is the freinds branch
 
 public class Drinking_fragment extends Fragment implements View.OnClickListener{
     Button startBtn, addDrinkBtn, removeDrinkBtn;
