@@ -183,6 +183,7 @@ public class DrinkingService extends Service {
                 .addAction(action1)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setStyle(new android.support.v4.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1,2))
+                .setSmallIcon(R.drawable.transparent_beer)
                 .build();
         return notification;
     }
@@ -237,6 +238,7 @@ public class DrinkingService extends Service {
             sendClockMessageToUI(counter);
             //updates the notification every 10 min
             if(counter%600 == 0) pushNotification();
+            Log.v("TimerTick", ""+counter);
         }
         catch (Throwable t) { //you should always ultimately catch all exceptions in timer tasks.
             Log.e("TimerTick", "Timer Tick Failed.", t);
