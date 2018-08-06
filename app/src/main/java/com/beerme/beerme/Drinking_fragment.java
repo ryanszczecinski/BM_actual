@@ -20,7 +20,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 
-import org.w3c.dom.Text;
 
 
 
@@ -275,6 +274,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.v("frag","destroyed");
         try {
             doUnbindService();
         }
@@ -282,11 +282,27 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
            // Log.e("MainActivity", "Failed to unbind from the service", t);
         }
     }
+    @Override
+    public void onPause(){
+        super.onPause();
+        doUnbindService();
+    }
+    @Override
+    public void onResume(){
+        super.onResume();
+        CheckIfServiceIsRunning();
+    }
     private void CheckIfServiceIsRunning() {
         //If the service is running when the activity starts, we want to automatically bind to it.
         if (DrinkingService.isRunning()) {
             doBindService();
             startBtn.setText("Time to sober up");
+        }
+        else{
+            resetViews();
+            SharedPreferences sharedPreferences = getContext().getSharedPreferences(SettingsActivity.PREFERENCES,Context.MODE_PRIVATE);
+            previousDrinks.setText("Previous Number of Drinks: "+sharedPreferences.getInt(SettingsActivity.LAST_TIME_DRINKING,0));
+
         }
     }
     public void resetViews(){
@@ -295,7 +311,6 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
         estimatedBACView.setText("Estimated BAC: 0.0");
         timeElapsedView.setText("");
     }
-
 
 }
 
