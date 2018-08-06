@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.v("MainActiviy", "oncreate");
         super.onCreate(savedInstanceState);
         SharedPreferences sharedPreferences = getSharedPreferences(SettingsActivity.PREFERENCES,MODE_PRIVATE);
         if(!sharedPreferences.contains(SettingsActivity.WEIGHT)){
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager =  findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
 

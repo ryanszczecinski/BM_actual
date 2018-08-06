@@ -151,6 +151,8 @@ public class DrinkingService extends Service {
 
         //creating all of the intents
         Intent intent = new Intent(getApplicationContext(),MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
         Intent addBeerIntent = new Intent(getApplicationContext(),DrinkingService.class);
         Intent exitIntent = new Intent(getApplicationContext(),DrinkingService.class);
         Intent removeBeerIntent = new Intent(getApplicationContext(),DrinkingService.class);
@@ -161,7 +163,7 @@ public class DrinkingService extends Service {
         removeBeerIntent.setAction(ACTION_REMOVE_BEER);
 
         //creating the pending intents
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intent,0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intent,PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent addBeerPI = PendingIntent.getService(this,0,addBeerIntent,0);
         PendingIntent exitPI = PendingIntent.getService(this,0,exitIntent,0);
         PendingIntent removeBeerPI = PendingIntent.getService(this,0,removeBeerIntent,0);
