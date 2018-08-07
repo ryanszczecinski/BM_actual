@@ -1,9 +1,13 @@
 package com.beerme.beerme;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -47,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         if(!sharedPreferences.contains(SettingsActivity.WEIGHT)){
             Intent i = new Intent(this, SettingsActivity.class);
             startActivity(i);
+
         }
         setContentView(R.layout.activity_main);
 
@@ -59,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
         // Set up the ViewPager with the sections adapter.
         mViewPager =  findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-
 
 //        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
 //        tabLayout.setupWithViewPager(mViewPager);
@@ -86,6 +90,9 @@ public class MainActivity extends AppCompatActivity {
             this.startActivity(i);
             Log.v("settings", "settings selected");
             return true;
+        }
+        else if(id == R.id.Disclaimer){
+            new Disclaimer().show(getSupportFragmentManager(),"Disclaimer");
         }
 
         return super.onOptionsItemSelected(item);
@@ -132,6 +139,19 @@ public class MainActivity extends AppCompatActivity {
                 default:
                     return null;
             }
+        }
+    }
+    public static class Disclaimer extends DialogFragment {
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setMessage(R.string.Full_Disclaimer)
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+
+                        }
+                    });
+            return builder.create();
         }
     }
 }

@@ -32,6 +32,8 @@ public class SettingsActivity extends AppCompatActivity {
         femaleCheckBox = findViewById(R.id.female_check_box);
 
         SharedPreferences sharedPreferences = this.getSharedPreferences(PREFERENCES,MODE_PRIVATE);
+        if(!sharedPreferences.contains(SettingsActivity.WEIGHT)) new MainActivity.Disclaimer().show(getSupportFragmentManager(),"Disclaimer");
+
         if(sharedPreferences.contains(WEIGHT)){
             weightSetting.setText(""+sharedPreferences.getInt(WEIGHT,0));
             if(sharedPreferences.getBoolean(GENDER,true)) maleCheckBox.setChecked(true);
