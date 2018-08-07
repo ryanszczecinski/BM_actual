@@ -27,15 +27,8 @@ public class DrinkingService extends Service {
     private static boolean isRunning = false;
     ArrayList<Messenger> mClients = new ArrayList<Messenger>(); // Keeps track of all current registered clients.
     // Holds last value set by a client.
-    static final int MSG_REGISTER_CLIENT = 1;
-    static final int MSG_ADD_BEER = 2;
-    static final int MSG_REMOVE_BEER = 3;
-    static final int MSG_BAC = 4;
-    static final int MSG_UNREGISTER_CLIENT = 5;
-    static final int MSG_CLOCK = 6;
-    static final int MSG_PREVIOUS = 7;
-    static final int MSG_GET_CURRENT_STATUS = 8;
-    static final int MSG_REMOVE_FROM_FOREGROUND = 9;
+    static final int MSG_REGISTER_CLIENT = 1, MSG_ADD_BEER = 2,MSG_REMOVE_BEER = 3,MSG_BAC = 4,MSG_UNREGISTER_CLIENT = 5,MSG_CLOCK = 6,
+            MSG_PREVIOUS = 7,MSG_GET_CURRENT_STATUS = 8,MSG_REMOVE_FROM_FOREGROUND = 9, MSG_SET_TIME=10;
     static final String ACTION_START_THIS_BITCH_UP = "Start";
     static final String ACTION_ADD_BEER = "Add Beer";
     static final String ACTION_EXIT = "Exit";
@@ -82,6 +75,10 @@ public class DrinkingService extends Service {
                 case MSG_REMOVE_FROM_FOREGROUND:
                     stopForeground(true);
                     break;
+                case MSG_SET_TIME:
+                    counter = msg.arg1*3600;
+                    updateBAC();
+                    pushNotification();
                 default:
                     super.handleMessage(msg);
             }
