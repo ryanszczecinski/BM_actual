@@ -215,7 +215,7 @@ public class DrinkingService extends Service {
             sendBACMessageToUI();
             pushNotification();
         }
-        return START_STICKY; // run until explicitly stopped.
+        return START_NOT_STICKY; //if it crashes it wont restart
     }
 
     public static boolean isRunning()
