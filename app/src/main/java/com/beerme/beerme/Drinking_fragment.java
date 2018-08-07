@@ -13,21 +13,21 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.TextView;
-
-
-
+import android.widget.Toast;
 
 
 public class Drinking_fragment extends Fragment implements View.OnClickListener{
     Button startBtn, addDrinkBtn, removeDrinkBtn;
     TextView estimatedBACView, numberOfDrinks, previousDrinks, timeElapsedView;
     Messenger mService = null;
-    boolean mIsBound;
+    boolean mIsBound, editingText = false;
     Thread drinkingThread;
     final Messenger mMessenger = new Messenger(new IncomingHandler());
     //same as the service
@@ -41,7 +41,8 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
                    numberOfDrinks.setText(""+msg.arg2);
                    break;
                 case DrinkingService.MSG_CLOCK:
-                    setTimeElapsedView(msg.arg1);
+                    if(!editingText) setTimeElapsedView(msg.arg1);
+                    Log.v("Clock message", "" +editingText);
                     numberOfDrinks.setText(""+msg.arg2);
                     break;
                 case DrinkingService.MSG_PREVIOUS:
@@ -128,6 +129,31 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
         numberOfDrinks = v.findViewById(R.id.number_of_drinks);
         previousDrinks = v.findViewById(R.id.previous_number_of_drinks);
         timeElapsedView = v.findViewById(R.id.time_elapsed);
+        timeElapsedView.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                // If the event is a key-down event on the "enter" button
+                if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                    // Perform action on key press
+                    if(!timeElapsedView.getText().toString().equals(""))setCurrentTime(Integer.valueOf(timeElapsedView.getText().toString()));
+                    editingText = false;
+                    timeElapsedView.setHint("");
+                    return true;
+                }
+                return false;
+            }
+        });
+        timeElapsedView.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                //Toast.makeText(getContext(), timeElapsedView.getText(), Toast.LENGTH_LONG).show();
+                timeElapsedView.setText("");
+                timeElapsedView.setHint("Number of hours");
+                editingText = true;
+            }
+        });
         CheckIfServiceIsRunning();
         SharedPreferences sharedPreferences = getContext().getSharedPreferences(SettingsActivity.PREFERENCES,Context.MODE_PRIVATE);
         if(sharedPreferences.contains(SettingsActivity.LAST_TIME_DRINKING)&&!DrinkingService.isRunning()) previousDrinks.setText("Previous Number of Drinks: "+sharedPreferences.getInt(SettingsActivity.LAST_TIME_DRINKING,0));
@@ -163,6 +189,8 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
                 case R.id.remove_drink:
                     removeBeer();
                     break;
+
+
             }
         }
 
@@ -234,6 +262,21 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
                 try {
                     Message msg = Message.obtain(null, DrinkingService.MSG_REMOVE_FROM_FOREGROUND);
                     msg.replyTo = mMessenger;
+                    mService.send(msg);
+                }
+                catch (RemoteException e) {
+                }
+            }
+        }
+    }
+    private void setCurrentTime(int hours){
+        if (mIsBound) {
+
+            if (mService != null) {
+                try {
+                    Message msg = Message.obtain(null, DrinkingService.MSG_SET_TIME);
+                    msg.replyTo = mMessenger;
+                    msg.arg1 = hours;
                     mService.send(msg);
                 }
                 catch (RemoteException e) {
