@@ -9,12 +9,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 
 public class FriendsFragment extends Fragment {
 private FirebaseAuth mAuth;
+private FirebaseUser mUser;
 private TextView friendsTV;
 
     @Override
@@ -32,37 +35,13 @@ private TextView friendsTV;
         View v = inflater.inflate(R.layout.fragment_friends, container, false);
         friendsTV = v.findViewById(R.id.friendsText);
 
-        friendsTV.setText(mAuth.getCurrentUser().getDisplayName());
+
         return v;
     }
     @Override
     public void onStart(){
         super.onStart();
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-
+        mUser = mAuth.getCurrentUser();
+        if(mAuth.getCurrentUser()!=null)friendsTV.setText(mAuth.getCurrentUser().getDisplayName());
     }
-//    private void updateUI(FirebaseUser currentUser){
-//        if(currentUser == null){
-//            mAuth.createUserWithEmailAndPassword(email, password)
-//                    .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-//                        @Override
-//                        public void onComplete(@NonNull Task<AuthResult> task) {
-//                            if (task.isSuccessful()) {
-//                                // Sign in success, update UI with the signed-in user's information
-//                                Log.d(TAG, "createUserWithEmail:success");
-//                                FirebaseUser user = mAuth.getCurrentUser();
-//                                updateUI(user);
-//                            } else {
-//                                // If sign in fails, display a message to the user.
-//                                Log.w(TAG, "createUserWithEmail:failure", task.getException());
-//                                Toast.makeText(EmailPasswordActivity.this, "Authentication failed.",
-//                                        Toast.LENGTH_SHORT).show();
-//                                updateUI(null);
-//                            }
-//        }
-//        else{
-//
-//        }
-//    }
-
 }

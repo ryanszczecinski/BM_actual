@@ -21,12 +21,16 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.firebase.ui.auth.AuthUI;
+import com.google.firebase.auth.FirebaseAuth;
+
 import java.util.Arrays;
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
-  //  private static final int RC_SIGN_IN = 123;
- //   private FirebaseAuth mAuth;
+    private static final int RC_SIGN_IN = 123;
+    private FirebaseAuth mAuth;
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -49,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Log.v("MainActiviy", "oncreate");
         super.onCreate(savedInstanceState);
+        mAuth = FirebaseAuth.getInstance();
+        if(mAuth.getCurrentUser()==null) auth();
         SharedPreferences sharedPreferences = getSharedPreferences(SettingsActivity.PREFERENCES,MODE_PRIVATE);
         if(!sharedPreferences.contains(SettingsActivity.WEIGHT)){
             Intent i = new Intent(this, SettingsActivity.class);
@@ -66,11 +72,11 @@ public class MainActivity extends AppCompatActivity {
         // Set up the ViewPager with the sections adapter.
         mViewPager =  findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-//        mAuth = FirebaseAuth.getInstance();
-//        if(mAuth.getCurrentUser()==null)auth();
 
-//        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
-//        tabLayout.setupWithViewPager(mViewPager);
+
+
+        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
+        tabLayout.setupWithViewPager(mViewPager);
         }
 
 
@@ -121,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
             switch (position){
                 case 0: return new Drinking_fragment();
 
-  //              case 1: return new FriendsFragment();
+                case 1: return new FriendsFragment();
                 default: return null;
             }
         }
@@ -130,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         public int getCount() {
             // Show 2 total pages.
 
-            return 1;
+            return 2;
         }
 
         @Override
@@ -138,8 +144,8 @@ public class MainActivity extends AppCompatActivity {
             switch (position) {
                 case 0:
                     return "Drinking";
-//                case 1:
-//                    return "Friends";
+                case 1:
+                    return "Friends";
                 default:
                     return null;
             }
@@ -157,6 +163,17 @@ public class MainActivity extends AppCompatActivity {
                     });
             return builder.create();
         }
+    }
+    private void auth(){
+        List<AuthUI.IdpConfig> providers = Arrays.asList(
+                new AuthUI.IdpConfig.EmailBuilder().build());
+
+        startActivityForResult(
+                AuthUI.getInstance()
+                        .createSignInIntentBuilder()
+                        .setAvailableProviders(providers)
+                        .build(),
+                RC_SIGN_IN);
     }
 
 
