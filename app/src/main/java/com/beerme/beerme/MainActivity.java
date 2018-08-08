@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.DialogFragment;
@@ -22,9 +23,18 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.IdpResponse;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int RC_SIGN_IN = 123;
+    private FirebaseAuth mAuth;
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -64,9 +74,11 @@ public class MainActivity extends AppCompatActivity {
         // Set up the ViewPager with the sections adapter.
         mViewPager =  findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+        mAuth = FirebaseAuth.getInstance();
+        if(mAuth.getCurrentUser()==null)auth();
 
-//        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
-//        tabLayout.setupWithViewPager(mViewPager);
+        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
+        tabLayout.setupWithViewPager(mViewPager);
         }
 
 
@@ -117,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
             switch (position){
                 case 0: return new Drinking_fragment();
 
-//                case 1: return new Stats_fragment();
+                case 1: return new FriendsFragment();
                 default: return null;
             }
         }
@@ -126,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
         public int getCount() {
             // Show 2 total pages.
 
-            return 1;
+            return 2;
         }
 
         @Override
@@ -134,8 +146,8 @@ public class MainActivity extends AppCompatActivity {
             switch (position) {
                 case 0:
                     return "Drinking";
-//                case 1:
-//                    return "Stats";
+                case 1:
+                    return "Friends";
                 default:
                     return null;
             }
@@ -152,6 +164,37 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
             return builder.create();
+        }
+    }
+    public void auth(){
+        List<AuthUI.IdpConfig> providers = Arrays.asList(
+                new AuthUI.IdpConfig.EmailBuilder().build());
+        startActivityForResult(
+                AuthUI.getInstance()
+                        .createSignInIntentBuilder()
+                        .setAvailableProviders(providers)
+                        .setIsSmartLockEnabled(true)
+                        .build(),
+                RC_SIGN_IN);
+
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            IdpResponse response = IdpResponse.fromResultIntent(data);
+
+            if (resultCode == RESULT_OK) {
+                // Successfully signed in
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                // ...
+            } else {
+                // Sign in failed. If response is null the user canceled the
+                // sign-in flow using the back button. Otherwise check
+                // response.getError().getErrorCode() and handle the error.
+                // ...
+            }
         }
     }
 }
