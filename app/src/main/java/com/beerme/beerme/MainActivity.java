@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
 //        mAuth = FirebaseAuth.getInstance();
 //        if(mAuth.getCurrentUser()==null)auth();
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
-        tabLayout.setupWithViewPager(mViewPager);
+//        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
+//        tabLayout.setupWithViewPager(mViewPager);
         }
 
 
@@ -121,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
             switch (position){
                 case 0: return new Drinking_fragment();
 
-                case 1: return new FriendsFragment();
+  //              case 1: return new FriendsFragment();
                 default: return null;
             }
         }
@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         public int getCount() {
             // Show 2 total pages.
 
-            return 2;
+            return 1;
         }
 
         @Override
@@ -138,8 +138,8 @@ public class MainActivity extends AppCompatActivity {
             switch (position) {
                 case 0:
                     return "Drinking";
-                case 1:
-                    return "Friends";
+//                case 1:
+//                    return "Friends";
                 default:
                     return null;
             }
