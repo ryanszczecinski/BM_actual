@@ -12,4 +12,10 @@
         android:orderInCategory="100"
         android:title="@string/Disclaimer"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/addFriend"
+        android:orderInCategory="100"
+        android:title="add friends"
+        android:icon="@drawable/ic_add_black_24dp"
+        app:showAsAction="always" />
 </menu>

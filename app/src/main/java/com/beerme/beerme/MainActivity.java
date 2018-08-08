@@ -103,6 +103,13 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(id == R.id.Disclaimer){
             new Disclaimer().show(getSupportFragmentManager(),"Disclaimer");
+            return true;
+        }
+        else if(id == R.id.addFriend){
+            //TODO: create the intent that starts the add friends page
+            Intent i = new Intent(this, AddFriends.class);
+            this.startActivity(i);
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
