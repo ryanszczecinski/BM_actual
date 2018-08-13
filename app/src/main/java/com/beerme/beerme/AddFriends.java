@@ -27,7 +27,7 @@ FirebaseUser mUser;
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        if (mUser!=null) getSupportActionBar().setTitle(mUser.getDisplayName());
+        if (mUser!=null) getSupportActionBar().setTitle(mUser.getEmail());
     }
 
     @Override

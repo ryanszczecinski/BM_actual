@@ -22,15 +22,29 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.IdpResponse;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
     private static final int RC_SIGN_IN = 123;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -53,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Log.v("MainActiviy", "oncreate");
         super.onCreate(savedInstanceState);
+        db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
         if(mAuth.getCurrentUser()==null) auth();
         SharedPreferences sharedPreferences = getSharedPreferences(SettingsActivity.PREFERENCES,MODE_PRIVATE);
@@ -75,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
+        TabLayout tabLayout = findViewById(R.id.sliding_tabs);
         tabLayout.setupWithViewPager(mViewPager);
         }
 
@@ -183,5 +198,65 @@ public class MainActivity extends AppCompatActivity {
                 RC_SIGN_IN);
     }
 
+
+    @Override
+    /**
+     * when the activity completes, it checks to see if there is already a user account in the
+     * database with that email, if there is, then nothing happends, if there isnt then it creates
+     * a new document with basic data, isnt drinking, no friends and no requests
+     *
+     */
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            IdpResponse response = IdpResponse.fromResultIntent(data);
+
+            if (resultCode == RESULT_OK) {
+                // Successfully signed in
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                DocumentReference docRef = db.collection("users").document(user.getEmail());
+                docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists()) {
+                                Log.d("Query", "DocumentSnapshot data: " + document.getData());
+                            } else {
+                                Log.d("Query", "No such document creating one");
+                                Map<String, Object> user = new HashMap<>();
+                                user.put("userName",mAuth.getCurrentUser().getDisplayName());
+                                user.put("isDrinking",false);
+                                user.put("friends", new ArrayList<String>());
+                                user.put("friendRequests", new ArrayList<String>());
+                                DocumentReference docRef = db.collection("users").document(mAuth.getCurrentUser().getEmail());
+                                docRef.set(user)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Log.d("Query", "DocumentSnapshot successfully written!");
+                                    }
+                                })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.w("Query", "Error writing document", e);
+                                            }
+                                        });
+                            }
+                        } else {
+                            Log.d("Query", "get failed with ", task.getException());
+                        }
+                    }
+                });
+            } else {
+                // Sign in failed. If response is null the user canceled the
+                // sign-in flow using the back button. Otherwise check
+                // response.getError().getErrorCode() and handle the error.
+                // ...
+            }
+        }
+    }
 
 }

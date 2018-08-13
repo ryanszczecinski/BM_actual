@@ -32,7 +32,7 @@
         android:id="@+id/AddFriendEditText"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:hint="Add Friend"
+        android:hint="Add Friend By Email"
         app:layout_anchor="@+id/include"
         app:layout_anchorGravity="top|center" />
 

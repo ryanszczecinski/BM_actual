@@ -22,14 +22,22 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
+
 
 public class Drinking_fragment extends Fragment implements View.OnClickListener{
+    private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
     Button startBtn, addDrinkBtn, removeDrinkBtn;
     TextView estimatedBACView, numberOfDrinks, previousDrinks, timeElapsedView;
     Messenger mService = null;
     boolean mIsBound, editingText = false;
     Thread drinkingThread;
     final Messenger mMessenger = new Messenger(new IncomingHandler());
+    public static String DB_IS_DRINKING = "isDrinking",DB_NUMBER_OF_DRINKS = "numberOfDrinks";
     //same as the service
     class IncomingHandler extends Handler {
         @Override
@@ -39,10 +47,10 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
                     double bac = msg.arg1/(1000.0);
                    estimatedBACView.setText("Estimated BAC: "+bac);
                    numberOfDrinks.setText(""+msg.arg2);
+                   updateDrinksInDB(msg.arg2);
                    break;
                 case DrinkingService.MSG_CLOCK:
                     if(!editingText) setTimeElapsedView(msg.arg1);
-                    Log.v("Clock message", "" +editingText);
                     numberOfDrinks.setText(""+msg.arg2);
                     break;
                 case DrinkingService.MSG_PREVIOUS:
@@ -116,7 +124,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.v("oncreate","happened");
+
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_drinking, container, false);
         startBtn =  v.findViewById(R.id.start_drinking_button);
@@ -129,6 +137,8 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
         numberOfDrinks = v.findViewById(R.id.number_of_drinks);
         previousDrinks = v.findViewById(R.id.previous_number_of_drinks);
         timeElapsedView = v.findViewById(R.id.time_elapsed);
+        db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
         timeElapsedView.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -203,6 +213,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
             drinkingThread.run();
             doBindService();
             mIsBound = true;
+            initDrinkingInDB();
         }
         else{
             sendPreviousMessageToService();
@@ -210,6 +221,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
             doUnbindService();
             getContext().stopService(new Intent(getContext(),DrinkingService.class));
             resetViews();
+            stopDrinkingInDB();
         }
 
     }
@@ -335,6 +347,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
         super.onResume();
         CheckIfServiceIsRunning();
     }
+    
     private void CheckIfServiceIsRunning() {
         //If the service is running when the activity starts, we want to automatically bind to it.
         if (DrinkingService.isRunning()) {
@@ -348,12 +361,31 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
 
         }
     }
-    public void resetViews(){
+    private void resetViews(){
         startBtn.setText("It's Five O'Clock Somewhere");
         numberOfDrinks.setText("0");
         estimatedBACView.setText("Estimated BAC: 0.0");
         timeElapsedView.setText("");
     }
 
+    //these methods update the data base
+    private void updateDrinksInDB(int numDrinks){
+        db.collection("users").document(mAuth.getCurrentUser().getEmail())
+                .update(DB_NUMBER_OF_DRINKS,numDrinks);
+    }
+    private void initDrinkingInDB(){
+        WriteBatch batch = db.batch();
+        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail());
+        batch.update(userDoc,DB_IS_DRINKING, true);
+        batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
+        batch.commit();
+    }
+    private void stopDrinkingInDB(){
+        WriteBatch batch = db.batch();
+        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail());
+        batch.update(userDoc,DB_IS_DRINKING, false);
+        batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
+        batch.commit();
+    }
 }
 
