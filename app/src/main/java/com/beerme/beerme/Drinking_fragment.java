@@ -27,6 +27,12 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
 
+import static com.beerme.beerme.DataBaseString.DB_DRINKING_DOCUMENT;
+import static com.beerme.beerme.DataBaseString.DB_IS_DRINKING;
+import static com.beerme.beerme.DataBaseString.DB_NUMBER_OF_DRINKS;
+import static com.beerme.beerme.DataBaseString.DB_PARTY_COLLECTION;
+import static com.beerme.beerme.DataBaseString.DB_USERS_COLLECTION;
+
 
 public class Drinking_fragment extends Fragment implements View.OnClickListener{
     private FirebaseFirestore db;
@@ -37,7 +43,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
     boolean mIsBound, editingText = false;
     Thread drinkingThread;
     final Messenger mMessenger = new Messenger(new IncomingHandler());
-    public static String DB_IS_DRINKING = "isDrinking",DB_NUMBER_OF_DRINKS = "numberOfDrinks";
+
     //same as the service
     class IncomingHandler extends Handler {
         @Override
@@ -370,19 +376,19 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
 
     //these methods update the data base
     private void updateDrinksInDB(int numDrinks){
-        db.collection("users").document(mAuth.getCurrentUser().getEmail())
+        db.collection(DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT)
                 .update(DB_NUMBER_OF_DRINKS,numDrinks);
     }
     private void initDrinkingInDB(){
         WriteBatch batch = db.batch();
-        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail());
-        batch.update(userDoc,DB_IS_DRINKING, true);
-        batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
+        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
+        batch.update(userDoc, DB_IS_DRINKING, true);
+        batch.update(userDoc, DB_NUMBER_OF_DRINKS, 0);
         batch.commit();
     }
     private void stopDrinkingInDB(){
         WriteBatch batch = db.batch();
-        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail());
+        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
         batch.update(userDoc,DB_IS_DRINKING, false);
         batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
         batch.commit();

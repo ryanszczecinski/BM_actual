@@ -29,9 +29,11 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
 
         TabLayout tabLayout = findViewById(R.id.sliding_tabs);
         tabLayout.setupWithViewPager(mViewPager);
-        }
+    }
 
 
     @Override
@@ -225,25 +227,28 @@ public class MainActivity extends AppCompatActivity {
                                 Log.d("Query", "DocumentSnapshot data: " + document.getData());
                             } else {
                                 Log.d("Query", "No such document creating one");
-                                Map<String, Object> user = new HashMap<>();
-                                user.put("userName",mAuth.getCurrentUser().getDisplayName());
-                                user.put("isDrinking",false);
-                                user.put("friends", new ArrayList<String>());
-                                user.put("friendRequests", new ArrayList<String>());
-                                DocumentReference docRef = db.collection("users").document(mAuth.getCurrentUser().getEmail());
-                                docRef.set(user)
-                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                    @Override
-                                    public void onSuccess(Void aVoid) {
-                                        Log.d("Query", "DocumentSnapshot successfully written!");
-                                    }
-                                })
-                                        .addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                Log.w("Query", "Error writing document", e);
-                                            }
-                                        });
+                                WriteBatch batch = db.batch();
+                                Map<String, Object> userVal = new HashMap<>();
+                                userVal.put(DataBaseString.DB_USERNAME,mAuth.getCurrentUser().getDisplayName());
+                                DocumentReference userRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail());
+                                batch.set(userRef,userVal);
+
+                                DocumentReference drinkingRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DataBaseString.DB_PARTY_COLLECTION).document(DataBaseString.DB_DRINKING_DOCUMENT);                                Map<String, Object> drinkingVal = new HashMap<>();
+                                drinkingVal.put(DataBaseString.DB_IS_DRINKING,false);
+                                drinkingVal.put(DataBaseString.DB_NUMBER_OF_DRINKS,0);
+                                batch.set(drinkingRef,drinkingVal);
+
+                                CollectionReference friendCollectionRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION);
+                                DocumentReference friendRef = friendCollectionRef.document(DataBaseString.DB_FRIENDS_DOCUMENT);
+                                DocumentReference requestRef = friendCollectionRef.document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
+                                Map<String, Object> friendsVal = new HashMap<>();
+                                Map<String, Object> friendRequestVal = new HashMap<>();
+                                friendsVal.put(DataBaseString.DB_FRIENDS_ARRAY,new ArrayList<String>());
+                                friendRequestVal.put(DataBaseString.DB_FRIEND_REQUEST_ARRAY,new ArrayList<String>());
+                                batch.set(friendRef,friendsVal);
+                                batch.set(requestRef,friendRequestVal);
+                                batch.commit();
+
                             }
                         } else {
                             Log.d("Query", "get failed with ", task.getException());
