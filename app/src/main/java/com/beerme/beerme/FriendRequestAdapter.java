@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,11 +13,20 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Transaction;
+
 import java.util.ArrayList;
 
 public class FriendRequestAdapter extends ArrayAdapter<String> {
+    FirebaseFirestore db;
     public FriendRequestAdapter(Context context, ArrayList<String> friendRequests){
         super(context,0,friendRequests);
+        db = FirebaseFirestore.getInstance();
     }
 
 
@@ -33,25 +43,64 @@ public class FriendRequestAdapter extends ArrayAdapter<String> {
         acceptFriend.setTag(getItem(position));
         ImageButton deleteRequest = listItemView.findViewById(R.id.FRdeleteRequest);
         deleteRequest.setTag(getItem(position));
-        View.OnClickListener addFriendListner = new View.OnClickListener(){
+        View.OnClickListener addFriendListener = new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                // TODO: 8/15/2018 do shit in data base to add a friend and delete view
-                //first try to get the view removed then worry about DB\
-                //have to delete the string from the backing array as well...line below may do everything we need
+                final String tag = (String) view.getTag();
+                db.runTransaction(new Transaction.Function<Void>() {
+                    @Nullable
+                    @Override
+                    public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+                        //must read before write
+
+                        DocumentReference recieverfriendRequestDoc = db.collection(DataBaseString.DB_USERS_COLLECTION).document(FirebaseAuth.getInstance().getCurrentUser().getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
+                        DocumentReference recieverfriendsDoc = db.collection(DataBaseString.DB_USERS_COLLECTION).document(FirebaseAuth.getInstance().getCurrentUser().getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIENDS_DOCUMENT);
+                        DocumentReference senderfriendsDoc =  db.collection(DataBaseString.DB_USERS_COLLECTION).document(tag).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIENDS_DOCUMENT);
+
+                        DocumentSnapshot snapshot = transaction.get(recieverfriendRequestDoc);
+                        DocumentSnapshot friendsSnapshot = transaction.get(recieverfriendsDoc);
+                        DocumentSnapshot senderfriendsSnapshot = transaction.get(senderfriendsDoc);
+
+
+                        ArrayList<String> friendRequests = (ArrayList<String>) snapshot.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
+                        ArrayList<String> friends = (ArrayList<String>)  friendsSnapshot.get(DataBaseString.DB_FRIENDS_ARRAY);
+                        ArrayList<String> senderfriends = (ArrayList<String>) senderfriendsSnapshot.get(DataBaseString.DB_FRIENDS_ARRAY);
+
+                        friends.add(tag);
+                        friendRequests.remove(tag);
+                        senderfriends.add(FirebaseAuth.getInstance().getCurrentUser().getEmail());
+
+                        transaction.update(recieverfriendRequestDoc,DataBaseString.DB_FRIEND_REQUEST_ARRAY,friendRequests);
+                        transaction.update(recieverfriendsDoc,DataBaseString.DB_FRIENDS_ARRAY,friends);
+                        transaction.update(senderfriendsDoc,DataBaseString.DB_FRIENDS_ARRAY,senderfriends);
+                        return null;
+                    }
+                });
                 remove((String)view.getTag());
             }
         };
-        View.OnClickListener deleteRequestListner = new View.OnClickListener(){
+        View.OnClickListener deleteRequestListener = new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                // TODO: 8/15/2018 do shit in data base to remove request and delete view
-                //first try to get the view removed then worry about DB
+                final String tag = (String) view.getTag();
+                db.runTransaction(new Transaction.Function<Void>() {
+                    @Nullable
+                    @Override
+                    public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+                        DocumentReference friendRequestDoc = db.collection(DataBaseString.DB_USERS_COLLECTION).document(FirebaseAuth.getInstance().getCurrentUser().getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
+                        DocumentSnapshot snapshot = transaction.get(friendRequestDoc);
+                        ArrayList<String> friendRequests = (ArrayList<String>) snapshot.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
+                        friendRequests.remove(tag);
+                        transaction.update(friendRequestDoc,DataBaseString.DB_FRIEND_REQUEST_ARRAY,friendRequests);
+                        return null;
+                    }
+                });
                 remove((String)view.getTag());
             }
         };
-        acceptFriend.setOnClickListener(addFriendListner);
-        deleteRequest.setOnClickListener(deleteRequestListner);
+        acceptFriend.setOnClickListener(addFriendListener);
+        deleteRequest.setOnClickListener(deleteRequestListener);
         return listItemView;
     }
+
 }

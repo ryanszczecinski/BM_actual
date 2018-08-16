@@ -5,7 +5,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class DataBaseString {
-    public static String DB_IS_DRINKING = "isDrinking",
+    public static final String DB_IS_DRINKING = "isDrinking",
             DB_NUMBER_OF_DRINKS = "numberOfDrinks",
             DB_FRIENDS_COLLECTION= "friends",
             DB_FRIENDS_DOCUMENT =  "friends",
