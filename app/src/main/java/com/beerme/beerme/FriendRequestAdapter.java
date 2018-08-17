@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -52,7 +53,7 @@ public class FriendRequestAdapter extends ArrayAdapter<String> {
                     @Override
                     public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
                         //must read before write
-
+                        Log.v("transaction", "ran");
                         DocumentReference recieverfriendRequestDoc = db.collection(DataBaseString.DB_USERS_COLLECTION).document(FirebaseAuth.getInstance().getCurrentUser().getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
                         DocumentReference recieverfriendsDoc = db.collection(DataBaseString.DB_USERS_COLLECTION).document(FirebaseAuth.getInstance().getCurrentUser().getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIENDS_DOCUMENT);
                         DocumentReference senderfriendsDoc =  db.collection(DataBaseString.DB_USERS_COLLECTION).document(tag).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIENDS_DOCUMENT);
@@ -76,7 +77,7 @@ public class FriendRequestAdapter extends ArrayAdapter<String> {
                         return null;
                     }
                 });
-                remove((String)view.getTag());
+                remove(tag);
             }
         };
         View.OnClickListener deleteRequestListener = new View.OnClickListener(){

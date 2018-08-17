@@ -21,6 +21,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.IdpResponse;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -37,6 +39,8 @@ import com.google.firebase.firestore.Transaction;
 import org.w3c.dom.Document;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class AddFriends extends AppCompatActivity {
 private FirebaseAuth mAuth;
@@ -45,7 +49,7 @@ private FirebaseFirestore db;
 private FriendRequestAdapter adapter;
 private ArrayList<String> list;
 private EditText findFriend;
-private boolean foundFriend = false;
+private int RC_SIGN_IN =  122;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,8 +134,32 @@ private boolean foundFriend = false;
             new MainActivity.Disclaimer().show(getSupportFragmentManager(), "Disclaimer");
             return true;
         }
+        else if(id ==R.id.SignOut){
+            if(mUser !=null){
+                AuthUI.getInstance()
+                        .signOut(this)
+                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                auth();
+                            }
+                        });
+            }
+        }
         return super.onOptionsItemSelected(item);
     }
+    private void auth(){
+        List<AuthUI.IdpConfig> providers = Arrays.asList(
+                new AuthUI.IdpConfig.EmailBuilder().build());
+
+        startActivityForResult(
+                AuthUI.getInstance()
+                        .createSignInIntentBuilder()
+                        .setAvailableProviders(providers)
+                        .build(),
+                RC_SIGN_IN);
+    }
+
     private void dbInteractions(){
         DocumentReference friendRequests = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mUser.getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
         friendRequests.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>(){
@@ -173,5 +201,16 @@ private boolean foundFriend = false;
                 }
             }
         });
+    }
+
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            IdpResponse response = IdpResponse.fromResultIntent(data);
+            if (resultCode != RESULT_OK) {
+                if (response == null) auth();
+            }
+        }
     }
 }
