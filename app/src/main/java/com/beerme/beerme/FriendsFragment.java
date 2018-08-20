@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -31,13 +32,17 @@ private FirebaseAuth mAuth;
 private FirebaseUser mUser;
 private TextView friendsTV;
 private FirebaseFirestore db;
+private ArrayList<DrinkingFriend> list;
+private FriendsListAdapter adapter;
+private ListView listView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-
+        list = new ArrayList<>();
+        adapter = new FriendsListAdapter(getContext(),new ArrayList<DrinkingFriend>());
 
         }
 
@@ -48,7 +53,8 @@ private FirebaseFirestore db;
 
         View v = inflater.inflate(R.layout.fragment_friends, container, false);
         friendsTV = v.findViewById(R.id.friendsText);
-
+        listView = v.findViewById(R.id.friendsLV);
+        listView.setAdapter(adapter);
 
         return v;
     }
@@ -63,6 +69,7 @@ private FirebaseFirestore db;
         }
     }
     private void dbInteractions(){
+        //initial query for friends in personal array
         DocumentReference friends = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mUser.getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIENDS_DOCUMENT);
         friends.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>(){
             @Override
@@ -71,8 +78,55 @@ private FirebaseFirestore db;
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
                         Log.d("FriendsQuery", "DocumentSnapshot data: " + document.getData());
-                        //TODO: put the array into an arrayadapter and attach a list view to it
-                        ArrayList<String> friendsArray = (ArrayList<String>)document.get(DataBaseString.DB_FRIENDS_ARRAY);
+                        final ArrayList<String> friendsArray = (ArrayList<String>)document.get(DataBaseString.DB_FRIENDS_ARRAY);
+                        //in this for loop we loop over every friend to see their drinking status
+                        for(int i = 0; i< friendsArray.size();i++){
+                            final int index = i;
+                            DocumentReference friendDrinkingRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(friendsArray.get(i)).collection(DataBaseString.DB_PARTY_COLLECTION).document(DataBaseString.DB_DRINKING_DOCUMENT);
+                            friendDrinkingRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                @Override
+                                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                    if(task.isSuccessful()){
+                                        DocumentSnapshot snapshot = task.getResult();
+                                        if(snapshot.exists()){
+                                            //create a drinkingFriend object and add it to the adapter
+                                            boolean isDrinking = (boolean)snapshot.get(DataBaseString.DB_IS_DRINKING);
+                                            int numDrinks = Math.toIntExact((long)snapshot.get(DataBaseString.DB_NUMBER_OF_DRINKS));
+                                            DrinkingFriend df = new DrinkingFriend(friendsArray.get(index),isDrinking,numDrinks);
+                                            adapter.add(df);
+                                            list.add(df);
+                                            }
+                                    }
+                                }
+                            });
+                            //used to listen for changes to their drinking document
+                            friendDrinkingRef.addSnapshotListener(getActivity(), new EventListener<DocumentSnapshot>() {
+                                @Override
+                                public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+                                    if(e != null){
+                                        Log.w("FriendsSnapShot", "Listen failed.", e);
+                                        return;
+                                    }
+
+                                    if(documentSnapshot!=null && documentSnapshot.exists()){
+                                        boolean isDrinking = (boolean)documentSnapshot.get(DataBaseString.DB_IS_DRINKING);
+                                        int numDrinks = Math.toIntExact((long)documentSnapshot.get(DataBaseString.DB_NUMBER_OF_DRINKS));
+                                        DrinkingFriend df = new DrinkingFriend(friendsArray.get(index),isDrinking,numDrinks);
+                                        int position = adapter.getPosition(df);
+                                        DrinkingFriend drinkingFriend = df;
+                                        if(position>=0) {
+                                             drinkingFriend = adapter.getItem(position);
+                                        }
+                                        drinkingFriend.setIsDrinking(isDrinking);
+                                        drinkingFriend.setNumberOfDrinks(numDrinks);
+                                        adapter.sort(new DrinkingFriendComparator());
+                                    }
+                                    else{
+                                        Log.d("FriendsSnapShot", "Current data: null");
+                                    }
+                                }
+                            });
+                        }
                     } else {
                         Log.d("FriendsQuery", "No such document");
                     }
@@ -96,5 +150,4 @@ private FirebaseFirestore db;
             }
         });
     }
-
 }

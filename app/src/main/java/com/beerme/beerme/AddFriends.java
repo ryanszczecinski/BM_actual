@@ -72,38 +72,41 @@ private int RC_SIGN_IN =  122;
         findFriend.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    //hides the keyboard
-                    InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-                    //Query for that name
-                    db.runTransaction(new Transaction.Function<Void>() {
-                        @Nullable
-                        @Override
-                        public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
-                            DocumentReference friendRequestRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(findFriend.getText().toString()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);;
-                            DocumentSnapshot friendRequestSnap =  transaction.get(friendRequestRef);
-                            if(friendRequestSnap.exists()){
-                                //entered correctly
-                                ArrayList<String> friendRequests = (ArrayList<String>) friendRequestSnap.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
-                                friendRequests.add(mAuth.getCurrentUser().getEmail());
-                                transaction.update(friendRequestRef,DataBaseString.DB_FRIEND_REQUEST_ARRAY,friendRequests);
+                if(mUser!= null) {
+                    if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                        //hides the keyboard
+                        InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                        //Query for that name
+                        db.runTransaction(new Transaction.Function<Void>() {
+                            @Nullable
+                            @Override
+                            public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+                                DocumentReference friendRequestRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(findFriend.getText().toString()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
+                                ;
+                                DocumentSnapshot friendRequestSnap = transaction.get(friendRequestRef);
+                                if (friendRequestSnap.exists()) {
+                                    //entered correctly
+                                    ArrayList<String> friendRequests = (ArrayList<String>) friendRequestSnap.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
+                                    friendRequests.add(mAuth.getCurrentUser().getEmail());
+                                    transaction.update(friendRequestRef, DataBaseString.DB_FRIEND_REQUEST_ARRAY, friendRequests);
+                                }
+                                return null;
                             }
-                            return null;
-                        }
-                    }).addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void v) {
-                         Toast.makeText(getApplicationContext(), "Request Sent", Toast.LENGTH_LONG).show();
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Toast.makeText(getApplicationContext(), "User Not Found", Toast.LENGTH_LONG).show();
-                        }
-                    });
-                    return true;
+                        }).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void v) {
+                                Toast.makeText(getApplicationContext(), "Request Sent", Toast.LENGTH_LONG).show();
+                            }
+                        })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Toast.makeText(getApplicationContext(), "User Not Found", Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                        return true;
+                    }
                 }
                 return false;
             }

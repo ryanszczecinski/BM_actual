@@ -30,7 +30,8 @@ public class FriendsListAdapter extends ArrayAdapter<DrinkingFriend> {
         TextView drinks = listItemView.findViewById(R.id.right);
         DrinkingFriend friend = getItem(position);
         name.setText(friend.getName());
-        drinks.setText(""+friend.getDrinks());
+        if(friend.isDrinking())drinks.setText(""+friend.getDrinks());
+        else drinks.setText("not drinking");
         return listItemView;
     }
 }
