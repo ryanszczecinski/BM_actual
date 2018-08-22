@@ -29,18 +29,27 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Transaction;
+import com.google.firebase.firestore.WriteBatch;
 
 import org.w3c.dom.Document;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static com.beerme.beerme.DataBaseString.DB_DRINKING_DOCUMENT;
+import static com.beerme.beerme.DataBaseString.DB_IS_DRINKING;
+import static com.beerme.beerme.DataBaseString.DB_NUMBER_OF_DRINKS;
+import static com.beerme.beerme.DataBaseString.DB_PARTY_COLLECTION;
 
 public class AddFriends extends AppCompatActivity {
 private FirebaseAuth mAuth;
@@ -50,6 +59,7 @@ private FriendRequestAdapter adapter;
 private ArrayList<String> list;
 private EditText findFriend;
 private int RC_SIGN_IN =  122;
+private ArrayList<String> friends;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +67,7 @@ private int RC_SIGN_IN =  122;
         mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser();
         db = FirebaseFirestore.getInstance();
+        friends = new ArrayList<>();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_friends);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -78,18 +89,43 @@ private int RC_SIGN_IN =  122;
                         InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                         imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
                         //Query for that name
+                        DocumentReference friendsRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(findFriend.getText().toString()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIENDS_DOCUMENT);
+                        friendsRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                if(task.isSuccessful()){
+                                    DocumentSnapshot snapshot = task.getResult();
+                                    if(snapshot.exists()){
+                                        friends =(ArrayList<String>) snapshot.get(DataBaseString.DB_FRIENDS_ARRAY);
+                                    }
+
+                                }
+                            }
+                        });
                         db.runTransaction(new Transaction.Function<Void>() {
                             @Nullable
                             @Override
                             public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+                                Log.v("transaction", "ran");
                                 DocumentReference friendRequestRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(findFriend.getText().toString()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
-                                ;
                                 DocumentSnapshot friendRequestSnap = transaction.get(friendRequestRef);
+                                Log.v("transaction", "ran"+1);
                                 if (friendRequestSnap.exists()) {
                                     //entered correctly
+                                    Log.v("transaction", "ran"+2);
                                     ArrayList<String> friendRequests = (ArrayList<String>) friendRequestSnap.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
-                                    friendRequests.add(mAuth.getCurrentUser().getEmail());
+                                    //will add only if not already a friend and not in requests
+                                    if(!friendRequests.contains(mUser.getEmail())&&!friends.contains(mUser.getEmail())){
+                                        friendRequests.add(mUser.getEmail());
+                                        //will save an extra write i guess
+
+                                    }
                                     transaction.update(friendRequestRef, DataBaseString.DB_FRIEND_REQUEST_ARRAY, friendRequests);
+
+
+                                }
+                                else{
+                                    Log.v("transaction", "DNE");
                                 }
                                 return null;
                             }
@@ -103,6 +139,7 @@ private int RC_SIGN_IN =  122;
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
                                         Toast.makeText(getApplicationContext(), "User Not Found", Toast.LENGTH_LONG).show();
+                                        Log.e("transaction","shit failed lol",e);
                                     }
                                 });
                         return true;
@@ -139,6 +176,7 @@ private int RC_SIGN_IN =  122;
         }
         else if(id ==R.id.SignOut){
             if(mUser !=null){
+                stopDrinkingInDB();
                 AuthUI.getInstance()
                         .signOut(this)
                         .addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -193,7 +231,6 @@ private int RC_SIGN_IN =  122;
                 }
                 if (snapshot != null && snapshot.exists()) {
                     Log.d("FriendsSnapShot", "Current data: " + snapshot.getData());
-                    //TODO: add data to the arraylist adapter
                     list = (ArrayList<String>) snapshot.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
                     ListView listView = findViewById(R.id.addFriendLV);
                     adapter = new FriendRequestAdapter(getApplicationContext(),list);
@@ -211,9 +248,68 @@ private int RC_SIGN_IN =  122;
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN) {
             IdpResponse response = IdpResponse.fromResultIntent(data);
-            if (resultCode != RESULT_OK) {
+
+            if (resultCode == RESULT_OK) {
+                // Successfully signed in
+                mAuth = FirebaseAuth.getInstance();
+                mUser = mAuth.getCurrentUser();
+                if (mUser!=null){
+                    getSupportActionBar().setTitle(mUser.getEmail());
+                }
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                DocumentReference docRef = db.collection("users").document(user.getEmail());
+                docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists()) {
+                                Log.d("Query", "DocumentSnapshot data: " + document.getData());
+                            } else {
+                                Log.d("Query", "No such document creating one");
+                                WriteBatch batch = db.batch();
+                                Map<String, Object> userVal = new HashMap<>();
+                                userVal.put(DataBaseString.DB_USERNAME,mAuth.getCurrentUser().getDisplayName());
+                                DocumentReference userRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail());
+                                batch.set(userRef,userVal);
+
+                                DocumentReference drinkingRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DataBaseString.DB_PARTY_COLLECTION).document(DataBaseString.DB_DRINKING_DOCUMENT);                                Map<String, Object> drinkingVal = new HashMap<>();
+                                drinkingVal.put(DataBaseString.DB_USERNAME,mAuth.getCurrentUser().getDisplayName());
+                                drinkingVal.put(DataBaseString.DB_IS_DRINKING,false);
+                                drinkingVal.put(DataBaseString.DB_NUMBER_OF_DRINKS,0);
+                                batch.set(drinkingRef,drinkingVal);
+
+                                CollectionReference friendCollectionRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DataBaseString.DB_FRIENDS_COLLECTION);
+                                DocumentReference friendRef = friendCollectionRef.document(DataBaseString.DB_FRIENDS_DOCUMENT);
+                                DocumentReference requestRef = friendCollectionRef.document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
+                                Map<String, Object> friendsVal = new HashMap<>();
+                                Map<String, Object> friendRequestVal = new HashMap<>();
+                                friendsVal.put(DataBaseString.DB_FRIENDS_ARRAY,new ArrayList<String>());
+                                friendRequestVal.put(DataBaseString.DB_FRIEND_REQUEST_ARRAY,new ArrayList<String>());
+                                batch.set(friendRef,friendsVal);
+                                batch.set(requestRef,friendRequestVal);
+                                batch.commit();
+
+                            }
+                        } else {
+                            Log.d("Query", "get failed with ", task.getException());
+                        }
+                    }
+                });
+            } else {
+                // Sign in failed. If response is null the user canceled the
+                // sign-in flow using the back button. Otherwise check
+                // response.getError().getErrorCode() and handle the error.
+                // ...
                 if (response == null) auth();
             }
         }
+    }
+    private void stopDrinkingInDB(){
+        WriteBatch batch = db.batch();
+        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
+        batch.update(userDoc,DB_IS_DRINKING, false);
+        batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
+        batch.commit();
     }
 }

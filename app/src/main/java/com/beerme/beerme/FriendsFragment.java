@@ -32,7 +32,7 @@ private FirebaseAuth mAuth;
 private FirebaseUser mUser;
 private TextView friendsTV;
 private FirebaseFirestore db;
-private ArrayList<DrinkingFriend> list;
+private ArrayList<String> friendsEmails;
 private FriendsListAdapter adapter;
 private ListView listView;
 
@@ -40,8 +40,9 @@ private ListView listView;
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mAuth = FirebaseAuth.getInstance();
+        mUser = mAuth.getCurrentUser();
         db = FirebaseFirestore.getInstance();
-        list = new ArrayList<>();
+        friendsEmails = new ArrayList<>();
         adapter = new FriendsListAdapter(getContext(),new ArrayList<DrinkingFriend>());
 
         }
@@ -55,6 +56,9 @@ private ListView listView;
         friendsTV = v.findViewById(R.id.friendsText);
         listView = v.findViewById(R.id.friendsLV);
         listView.setAdapter(adapter);
+        if(mAuth.getCurrentUser()!=null){
+            dbInteractions();
+        }
 
         return v;
     }
@@ -65,7 +69,6 @@ private ListView listView;
         mUser = mAuth.getCurrentUser();
         if(mAuth.getCurrentUser()!=null){
             friendsTV.setText(mAuth.getCurrentUser().getDisplayName());
-            dbInteractions();
         }
     }
     private void dbInteractions(){
@@ -92,9 +95,10 @@ private ListView listView;
                                             //create a drinkingFriend object and add it to the adapter
                                             boolean isDrinking = (boolean)snapshot.get(DataBaseString.DB_IS_DRINKING);
                                             int numDrinks = Math.toIntExact((long)snapshot.get(DataBaseString.DB_NUMBER_OF_DRINKS));
-                                            DrinkingFriend df = new DrinkingFriend(friendsArray.get(index),isDrinking,numDrinks);
-                                            adapter.add(df);
-                                            list.add(df);
+                                            String username = (String)snapshot.get(DataBaseString.DB_USERNAME);
+                                            DrinkingFriend df = new DrinkingFriend(username,isDrinking,numDrinks);
+                                            if(adapter.getPosition(df)==-1)adapter.add(df);
+                                            friendsEmails.add(friendsArray.get(index));
                                             }
                                     }
                                 }
@@ -111,7 +115,8 @@ private ListView listView;
                                     if(documentSnapshot!=null && documentSnapshot.exists()){
                                         boolean isDrinking = (boolean)documentSnapshot.get(DataBaseString.DB_IS_DRINKING);
                                         int numDrinks = Math.toIntExact((long)documentSnapshot.get(DataBaseString.DB_NUMBER_OF_DRINKS));
-                                        DrinkingFriend df = new DrinkingFriend(friendsArray.get(index),isDrinking,numDrinks);
+                                        String username = (String)documentSnapshot.get(DataBaseString.DB_USERNAME);
+                                        DrinkingFriend df = new DrinkingFriend(username,isDrinking,numDrinks);
                                         int position = adapter.getPosition(df);
                                         DrinkingFriend drinkingFriend = df;
                                         if(position>=0) {
@@ -133,6 +138,7 @@ private ListView listView;
                 }
             }
         });
+        //when a new friend is added, this will update the friends page
         friends.addSnapshotListener(getActivity(),new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot snapshot,
@@ -143,7 +149,61 @@ private ListView listView;
                 }
                 if (snapshot != null && snapshot.exists()) {
                     Log.d("FriendsSnapShot", "Current data: " + snapshot.getData());
-                    //TODO: add data to the arraylist adapter
+                    //compare the emails
+                    final ArrayList<String> friendsArray = (ArrayList<String>) snapshot.get(DataBaseString.DB_FRIENDS_ARRAY);
+                    for(int i = 0; i<friendsArray.size();i++){
+                        //the current adapter does not contain the friend, must add it
+                        if(!friendsEmails.contains(friendsArray.get(i))){
+                            //must query to get the new friends information
+                            final int index = i;
+                            DocumentReference friendDrinkingRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(friendsArray.get(i)).collection(DataBaseString.DB_PARTY_COLLECTION).document(DataBaseString.DB_DRINKING_DOCUMENT);
+                            friendDrinkingRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                @Override
+                                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                    if(task.isSuccessful()){
+                                        DocumentSnapshot snapshot = task.getResult();
+                                        if(snapshot.exists()){
+                                            //create a drinkingFriend object and add it to the adapter
+                                            boolean isDrinking = (boolean)snapshot.get(DataBaseString.DB_IS_DRINKING);
+                                            int numDrinks = Math.toIntExact((long)snapshot.get(DataBaseString.DB_NUMBER_OF_DRINKS));
+                                            String username = (String)snapshot.get(DataBaseString.DB_USERNAME);
+                                            DrinkingFriend df = new DrinkingFriend(username,isDrinking,numDrinks);
+                                            if(adapter.getPosition(df)==-1)adapter.add(df);
+                                            friendsEmails.add(friendsArray.get(index));
+                                        }
+                                    }
+                                }
+                            });
+                            friendDrinkingRef.addSnapshotListener(getActivity(), new EventListener<DocumentSnapshot>() {
+                                @Override
+                                public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+                                    if(e != null){
+                                        Log.w("FriendsSnapShot", "Listen failed.", e);
+                                        return;
+                                    }
+
+                                    if(documentSnapshot!=null && documentSnapshot.exists()){
+                                        boolean isDrinking = (boolean)documentSnapshot.get(DataBaseString.DB_IS_DRINKING);
+                                        int numDrinks = Math.toIntExact((long)documentSnapshot.get(DataBaseString.DB_NUMBER_OF_DRINKS));
+                                        String username = (String)documentSnapshot.get(DataBaseString.DB_USERNAME);
+                                        DrinkingFriend df = new DrinkingFriend(username,isDrinking,numDrinks);
+                                        int position = adapter.getPosition(df);
+                                        DrinkingFriend drinkingFriend = df;
+                                        if(position>=0) {
+                                            drinkingFriend = adapter.getItem(position);
+                                        }
+                                        drinkingFriend.setIsDrinking(isDrinking);
+                                        drinkingFriend.setNumberOfDrinks(numDrinks);
+                                        adapter.sort(new DrinkingFriendComparator());
+                                    }
+                                    else{
+                                        Log.d("FriendsSnapShot", "Current data: null");
+                                    }
+                                }
+                            });
+
+                        }
+                    }
                 } else {
                     Log.d("FriendsSnapShot", "Current data: null");
                 }

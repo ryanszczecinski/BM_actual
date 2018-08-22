@@ -235,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
                                 batch.set(userRef,userVal);
 
                                 DocumentReference drinkingRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DataBaseString.DB_PARTY_COLLECTION).document(DataBaseString.DB_DRINKING_DOCUMENT);                                Map<String, Object> drinkingVal = new HashMap<>();
+                                drinkingVal.put(DataBaseString.DB_USERNAME,mAuth.getCurrentUser().getDisplayName());
                                 drinkingVal.put(DataBaseString.DB_IS_DRINKING,false);
                                 drinkingVal.put(DataBaseString.DB_NUMBER_OF_DRINKS,0);
                                 batch.set(drinkingRef,drinkingVal);

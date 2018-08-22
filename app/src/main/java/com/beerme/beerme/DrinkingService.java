@@ -16,12 +16,25 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
+
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static com.beerme.beerme.DataBaseString.DB_DRINKING_DOCUMENT;
+import static com.beerme.beerme.DataBaseString.DB_IS_DRINKING;
+import static com.beerme.beerme.DataBaseString.DB_NUMBER_OF_DRINKS;
+import static com.beerme.beerme.DataBaseString.DB_PARTY_COLLECTION;
+import static com.beerme.beerme.DataBaseString.DB_USERS_COLLECTION;
+
 public class DrinkingService extends Service {
     private NotificationManager nm;
+    private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
     private Timer timer = new Timer();
     private int counter = 0,BAC = 0, beginningOfIntervalTime = 0,beginningOfIntervalDrinks = 0, numberOfDrinks = 0;
     private static boolean isRunning = false;
@@ -56,12 +69,14 @@ public class DrinkingService extends Service {
                     updateBAC();
                     sendBACMessageToUI();
                     pushNotification();
+                    updateDrinksInDB();
                     break;
                 case MSG_REMOVE_BEER:
                     if(numberOfDrinks>0) numberOfDrinks -=1;
                     updateBAC();
                     sendBACMessageToUI();
                     pushNotification();
+                    updateDrinksInDB();
                     break;
                 case MSG_UNREGISTER_CLIENT:
                     mClients.remove(msg.replyTo);
@@ -136,6 +151,8 @@ public class DrinkingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
     }
 
     private void pushNotification(){
@@ -195,12 +212,15 @@ public class DrinkingService extends Service {
             startForeground(10,notification);
             timer.scheduleAtFixedRate(new TimerTask(){ public void run() {onTimerTick();}}, 0, 1000L);
             isRunning = true;
-            Log.i("MyService", "Received start id " + startId + ": " + intent); }
+            Log.i("MyService", "Received start id " + startId + ": " + intent);
+            initDrinkingInDB();
+        }
         else if(intent.getAction().equals(ACTION_ADD_BEER)){
             numberOfDrinks +=1;
             updateBAC();
             sendBACMessageToUI();
             pushNotification();
+            updateDrinksInDB();
         }
         else if(intent.getAction().equals(ACTION_EXIT)){
             savePrevious();
@@ -214,6 +234,7 @@ public class DrinkingService extends Service {
             updateBAC();
             sendBACMessageToUI();
             pushNotification();
+            updateDrinksInDB();
         }
         return START_NOT_STICKY; //if it crashes it wont restart
     }
@@ -274,6 +295,7 @@ public class DrinkingService extends Service {
         nm.cancel(10); // Cancel the persistent notification.
         Log.i("MyService", "Service Stopped.");
         isRunning = false;
+        stopDrinkingInDB();
         super.onDestroy();
     }
     //this method is called when the app is swiped away from recents screen
@@ -289,5 +311,23 @@ public class DrinkingService extends Service {
         editor.putInt(SettingsActivity.LAST_TIME_DRINKING,numberOfDrinks);
         editor.commit();
         Log.v("MyService","saved info");
+    }
+    private void updateDrinksInDB(){
+        db.collection(DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT)
+                .update(DB_NUMBER_OF_DRINKS,numberOfDrinks);
+    }
+    private void initDrinkingInDB(){
+        WriteBatch batch = db.batch();
+        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
+        batch.update(userDoc, DB_IS_DRINKING, true);
+        batch.update(userDoc, DB_NUMBER_OF_DRINKS, 0);
+        batch.commit();
+    }
+    private void stopDrinkingInDB(){
+        WriteBatch batch = db.batch();
+        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
+        batch.update(userDoc,DB_IS_DRINKING, false);
+        batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
+        batch.commit();
     }
 }

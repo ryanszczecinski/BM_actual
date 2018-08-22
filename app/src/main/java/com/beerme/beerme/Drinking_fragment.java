@@ -35,8 +35,6 @@ import static com.beerme.beerme.DataBaseString.DB_USERS_COLLECTION;
 
 
 public class Drinking_fragment extends Fragment implements View.OnClickListener{
-    private FirebaseFirestore db;
-    private FirebaseAuth mAuth;
     Button startBtn, addDrinkBtn, removeDrinkBtn;
     TextView estimatedBACView, numberOfDrinks, previousDrinks, timeElapsedView;
     Messenger mService = null;
@@ -53,7 +51,6 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
                     double bac = msg.arg1/(1000.0);
                    estimatedBACView.setText("Estimated BAC: "+bac);
                    numberOfDrinks.setText(""+msg.arg2);
-                   updateDrinksInDB(msg.arg2);
                    break;
                 case DrinkingService.MSG_CLOCK:
                     if(!editingText) setTimeElapsedView(msg.arg1);
@@ -143,8 +140,6 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
         numberOfDrinks = v.findViewById(R.id.number_of_drinks);
         previousDrinks = v.findViewById(R.id.previous_number_of_drinks);
         timeElapsedView = v.findViewById(R.id.time_elapsed);
-        db = FirebaseFirestore.getInstance();
-        mAuth = FirebaseAuth.getInstance();
         timeElapsedView.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -219,7 +214,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
             drinkingThread.run();
             doBindService();
             mIsBound = true;
-            initDrinkingInDB();
+
         }
         else{
             sendPreviousMessageToService();
@@ -227,7 +222,6 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
             doUnbindService();
             getContext().stopService(new Intent(getContext(),DrinkingService.class));
             resetViews();
-            stopDrinkingInDB();
         }
 
     }
@@ -374,24 +368,6 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
         timeElapsedView.setText("");
     }
 
-    //these methods update the data base
-    private void updateDrinksInDB(int numDrinks){
-        db.collection(DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT)
-                .update(DB_NUMBER_OF_DRINKS,numDrinks);
-    }
-    private void initDrinkingInDB(){
-        WriteBatch batch = db.batch();
-        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
-        batch.update(userDoc, DB_IS_DRINKING, true);
-        batch.update(userDoc, DB_NUMBER_OF_DRINKS, 0);
-        batch.commit();
-    }
-    private void stopDrinkingInDB(){
-        WriteBatch batch = db.batch();
-        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
-        batch.update(userDoc,DB_IS_DRINKING, false);
-        batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
-        batch.commit();
-    }
+
 }
 
