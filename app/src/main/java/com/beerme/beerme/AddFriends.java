@@ -61,6 +61,7 @@ private EditText findFriend;
 private int RC_SIGN_IN =  122;
 private ArrayList<String> friends;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         adapter = new FriendRequestAdapter(this, new ArrayList<String>());
