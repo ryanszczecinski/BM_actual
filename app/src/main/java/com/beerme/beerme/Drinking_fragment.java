@@ -148,7 +148,7 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
                     InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
                     // Perform action on key press
-                    if(!timeElapsedView.getText().toString().equals("")&&timeElapsedView.getText().toString().length()<3)setCurrentTime(Integer.valueOf(timeElapsedView.getText().toString()));
+                    if(!timeElapsedView.getText().toString().equals("")&&timeElapsedView.getText().toString().length()<4)setCurrentTime(Integer.valueOf(timeElapsedView.getText().toString()));
                     editingText = false;
                     timeElapsedView.setHint("");
                     return true;

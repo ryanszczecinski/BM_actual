@@ -63,6 +63,10 @@ public class SettingsActivity extends AppCompatActivity {
             noWeight.show();
             return;
         }
+        if(!(weightSetting.getText().toString().length()<4)){
+             Toast.makeText(this, "Please enter a smaller weight", Toast.LENGTH_SHORT).show();
+             return;
+        }
         //save the system settings
         SharedPreferences sharedPreferences = this.getSharedPreferences(PREFERENCES,MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -70,6 +74,7 @@ public class SettingsActivity extends AppCompatActivity {
         editor.putInt(WEIGHT, Integer.valueOf(weightSetting.getText().toString()));
         editor.commit();
         Intent i = new Intent(this, MainActivity.class);
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         this.startActivity(i);
 
     }

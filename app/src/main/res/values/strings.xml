@@ -4,8 +4,7 @@
     <string name="section_format">Hello World from section: %1$d</string>
     <string name="Full_Disclaimer">By using this app, you accept the fact that I, the app creator, am not liable
     for any of your dumb decisions you make while drinking. The app is for entertainment purposes only.
-    The BAC estimate is an only estimate, I use the Widemark formula to estimate BAC. DO NOT DRINK
-    AND DRIVE!</string>
+    The BAC estimate is an only estimate, I use the Widemark formula to estimate BAC. This app can be used for any standard drink. DO NOT DRINK AND DRIVE!</string>
     <string name="Disclaimer">Disclaimer</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

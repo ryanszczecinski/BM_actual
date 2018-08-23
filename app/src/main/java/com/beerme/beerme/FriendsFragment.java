@@ -104,7 +104,7 @@ private ListView listView;
                                 }
                             });
                             //used to listen for changes to their drinking document
-                            friendDrinkingRef.addSnapshotListener(getActivity(), new EventListener<DocumentSnapshot>() {
+                            friendDrinkingRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
                                 @Override
                                 public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
                                     if(e != null){
@@ -139,7 +139,7 @@ private ListView listView;
             }
         });
         //when a new friend is added, this will update the friends page
-        friends.addSnapshotListener(getActivity(),new EventListener<DocumentSnapshot>() {
+        friends.addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot snapshot,
                                 @Nullable FirebaseFirestoreException e) {
@@ -174,7 +174,7 @@ private ListView listView;
                                     }
                                 }
                             });
-                            friendDrinkingRef.addSnapshotListener(getActivity(), new EventListener<DocumentSnapshot>() {
+                            friendDrinkingRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
                                 @Override
                                 public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
                                     if(e != null){
