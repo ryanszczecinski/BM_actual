@@ -21,22 +21,47 @@
             android:layout_weight="1"
             android:background="?attr/colorPrimary"
             app:layout_scrollFlags="scroll|enterAlways"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-            >
+            app:popupTheme="@style/AppTheme.PopupOverlay">
 
         </android.support.v7.widget.Toolbar>
 
 
     </android.support.design.widget.AppBarLayout>
 
-    <EditText
-        android:id="@+id/AddFriendEditText"
+
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:hint="Add Friend By Email"
-        app:layout_anchor="@+id/include"
-        app:layout_anchorGravity="top|center"
-        />
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/AddFriendEditText"
+
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="8dp"
+            android:hint="Add Friend By Email"
+            app:layout_anchorGravity="top|center"
+            app:layout_constraintEnd_toStartOf="@+id/send_request"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/send_request"
+            android:layout_width="wrap_content"
+            android:layout_height="60dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/transparent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/AddFriendEditText"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_send_black_24dp" />
+    </android.support.constraint.ConstraintLayout>
+
+
+
 
     <TextView
         android:id="@+id/editText"
@@ -47,6 +72,8 @@
         android:text="Friend Requests"
         android:textAlignment="center"
         android:textAllCaps="false" />
+
+
 
     <ListView
         android:id="@+id/addFriendLV"

@@ -1,7 +1,7 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 
 
-import java.security.PublicKey;
+
 
 public class DrinkingFriend {
     private String name;

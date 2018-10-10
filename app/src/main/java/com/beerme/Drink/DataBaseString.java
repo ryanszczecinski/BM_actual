@@ -1,8 +1,5 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 public class DataBaseString {
     public static final String DB_IS_DRINKING = "isDrinking",

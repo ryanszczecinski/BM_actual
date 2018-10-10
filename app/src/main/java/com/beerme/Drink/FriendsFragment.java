@@ -1,9 +1,8 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,7 +79,7 @@ private ListView listView;
                 if (task.isSuccessful()) {
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
-                        Log.d("FriendsQuery", "DocumentSnapshot data: " + document.getData());
+
                         final ArrayList<String> friendsArray = (ArrayList<String>)document.get(DataBaseString.DB_FRIENDS_ARRAY);
                         //in this for loop we loop over every friend to see their drinking status
                         for(int i = 0; i< friendsArray.size();i++){
@@ -108,7 +107,7 @@ private ListView listView;
                                 @Override
                                 public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
                                     if(e != null){
-                                        Log.w("FriendsSnapShot", "Listen failed.", e);
+
                                         return;
                                     }
 
@@ -127,13 +126,13 @@ private ListView listView;
                                         adapter.sort(new DrinkingFriendComparator());
                                     }
                                     else{
-                                        Log.d("FriendsSnapShot", "Current data: null");
+
                                     }
                                 }
                             });
                         }
                     } else {
-                        Log.d("FriendsQuery", "No such document");
+
                     }
                 }
             }
@@ -144,11 +143,11 @@ private ListView listView;
             public void onEvent(@Nullable DocumentSnapshot snapshot,
                                 @Nullable FirebaseFirestoreException e) {
                 if (e != null) {
-                    Log.w("FriendsSnapShot", "Listen failed.", e);
+
                     return;
                 }
                 if (snapshot != null && snapshot.exists()) {
-                    Log.d("FriendsSnapShot", "Current data: " + snapshot.getData());
+
                     //compare the emails
                     final ArrayList<String> friendsArray = (ArrayList<String>) snapshot.get(DataBaseString.DB_FRIENDS_ARRAY);
                     for(int i = 0; i<friendsArray.size();i++){
@@ -178,7 +177,6 @@ private ListView listView;
                                 @Override
                                 public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
                                     if(e != null){
-                                        Log.w("FriendsSnapShot", "Listen failed.", e);
                                         return;
                                     }
 
@@ -197,7 +195,7 @@ private ListView listView;
                                         adapter.sort(new DrinkingFriendComparator());
                                     }
                                     else{
-                                        Log.d("FriendsSnapShot", "Current data: null");
+
                                     }
                                 }
                             });
@@ -205,7 +203,7 @@ private ListView listView;
                         }
                     }
                 } else {
-                    Log.d("FriendsSnapShot", "Current data: null");
+
                 }
             }
         });

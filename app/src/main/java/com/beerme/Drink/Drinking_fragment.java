@@ -1,4 +1,4 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,7 +12,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,18 +19,8 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.WriteBatch;
 
-import static com.beerme.beerme.DataBaseString.DB_DRINKING_DOCUMENT;
-import static com.beerme.beerme.DataBaseString.DB_IS_DRINKING;
-import static com.beerme.beerme.DataBaseString.DB_NUMBER_OF_DRINKS;
-import static com.beerme.beerme.DataBaseString.DB_PARTY_COLLECTION;
-import static com.beerme.beerme.DataBaseString.DB_USERS_COLLECTION;
 
 
 public class Drinking_fragment extends Fragment implements View.OnClickListener{
@@ -57,7 +46,6 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
                     numberOfDrinks.setText(""+msg.arg2);
                     break;
                 case DrinkingService.MSG_PREVIOUS:
-                    Log.v("MyFrag","recieved message");
                     SharedPreferences sharedPreferences = getContext().getSharedPreferences(SettingsActivity.PREFERENCES,Context.MODE_PRIVATE);
                     previousDrinks.setText("Previous Number of Drinks: "+sharedPreferences.getInt(SettingsActivity.LAST_TIME_DRINKING,0));
                     break;
@@ -175,7 +163,6 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
         drinkingThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.v("MyThread", "Thread run");
                 if(DrinkingService.isRunning()) doBindService();
                 else{
                 Intent intent = new Intent(getContext(), DrinkingService.class);
@@ -329,12 +316,10 @@ public class Drinking_fragment extends Fragment implements View.OnClickListener{
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.v("frag","destroyed");
         try {
             doUnbindService();
         }
         catch (Throwable t) {
-           // Log.e("MainActivity", "Failed to unbind from the service", t);
         }
     }
     @Override

@@ -1,4 +1,4 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 
 import java.util.Comparator;
 

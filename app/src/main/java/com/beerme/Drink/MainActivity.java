@@ -1,11 +1,10 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.DialogFragment;
@@ -17,7 +16,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
-import android.util.Log;
+
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
@@ -25,8 +24,6 @@ import android.view.WindowManager;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -68,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.v("MainActiviy", "oncreate");
         super.onCreate(savedInstanceState);
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         db = FirebaseFirestore.getInstance();
@@ -117,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             Intent i = new Intent(this, SettingsActivity.class);
             this.startActivity(i);
-            Log.v("settings", "settings selected");
+
             return true;
         }
         else if(id == R.id.Disclaimer){
@@ -225,9 +221,9 @@ public class MainActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             DocumentSnapshot document = task.getResult();
                             if (document.exists()) {
-                                Log.d("Query", "DocumentSnapshot data: " + document.getData());
+
                             } else {
-                                Log.d("Query", "No such document creating one");
+
                                 WriteBatch batch = db.batch();
                                 Map<String, Object> userVal = new HashMap<>();
                                 userVal.put(DataBaseString.DB_USERNAME,mAuth.getCurrentUser().getDisplayName());
@@ -253,7 +249,6 @@ public class MainActivity extends AppCompatActivity {
 
                             }
                         } else {
-                            Log.d("Query", "get failed with ", task.getException());
                         }
                     }
                 });

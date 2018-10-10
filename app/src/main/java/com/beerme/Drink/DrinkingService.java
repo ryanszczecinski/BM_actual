@@ -1,21 +1,26 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
+
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.RemoteViews;
 
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -25,11 +30,12 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.beerme.beerme.DataBaseString.DB_DRINKING_DOCUMENT;
-import static com.beerme.beerme.DataBaseString.DB_IS_DRINKING;
-import static com.beerme.beerme.DataBaseString.DB_NUMBER_OF_DRINKS;
-import static com.beerme.beerme.DataBaseString.DB_PARTY_COLLECTION;
-import static com.beerme.beerme.DataBaseString.DB_USERS_COLLECTION;
+import static android.app.NotificationManager.IMPORTANCE_LOW;
+import static com.beerme.Drink.DataBaseString.DB_DRINKING_DOCUMENT;
+import static com.beerme.Drink.DataBaseString.DB_IS_DRINKING;
+import static com.beerme.Drink.DataBaseString.DB_NUMBER_OF_DRINKS;
+import static com.beerme.Drink.DataBaseString.DB_PARTY_COLLECTION;
+import static com.beerme.Drink.DataBaseString.DB_USERS_COLLECTION;
 
 public class DrinkingService extends Service {
     private NotificationManager nm;
@@ -179,16 +185,20 @@ public class DrinkingService extends Service {
         //creating the pending intents
         PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intent,PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent addBeerPI = PendingIntent.getService(this,0,addBeerIntent,0);
-        PendingIntent exitPI = PendingIntent.getService(this,0,exitIntent,0);
+      //  PendingIntent exitPI = PendingIntent.getService(this,0,exitIntent,0);
         PendingIntent removeBeerPI = PendingIntent.getService(this,0,removeBeerIntent,0);
 
         //creating actions the non-depreciated way
         NotificationCompat.Action action3 = new NotificationCompat.Action.Builder(R.drawable.ic_add_black_32dp, "Beer Me", addBeerPI).build();
-        NotificationCompat.Action action1 = new NotificationCompat.Action.Builder(R.drawable.ic_close_black_32dp, "Exit", exitPI).build();
+       // NotificationCompat.Action action1 = new NotificationCompat.Action.Builder(R.drawable.ic_close_black_32dp, "Exit", exitPI).build();
         NotificationCompat.Action action2 = new NotificationCompat.Action.Builder(R.drawable.ic_remove_black_32dp, "Minus", removeBeerPI).build();
         double bac = BAC/1000.0;
-        //this will work, target SDK is 24
-        Notification notification = new NotificationCompat.Builder(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        NotificationChannel notificationChannel = new NotificationChannel("Drinking Notification ID","Drinking Notification", IMPORTANCE_LOW);
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(notificationChannel);
+
+        Notification notification = new NotificationCompat.Builder(this,"Drinking Notification ID")
                 .setContentText("Estimated BAC: " + bac)
                 .setContentTitle("Number of drinks: "+ numberOfDrinks)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -196,23 +206,41 @@ public class DrinkingService extends Service {
                 .setContentIntent(pendingIntent)
                 .addAction(action3)
                 .addAction(action2)
-                .addAction(action1)
+        //        .addAction(action1)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setStyle(new android.support.v4.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1,2))
+                .setStyle(new android.support.v4.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1))
                 .setSmallIcon(R.drawable.transparent_beer)
                 .build();
-        return notification;
+            return notification;
+        }
+        else{
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setContentText("Estimated BAC: " + bac)
+                    .setContentTitle("Number of drinks: "+ numberOfDrinks)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setShowWhen(false)
+                    .setContentIntent(pendingIntent)
+                    .addAction(action3)
+                    .addAction(action2)
+                  //  .addAction(action1)
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setStyle(new android.support.v4.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1))
+                    .setSmallIcon(R.drawable.transparent_beer)
+                    .build();
+            return notification;
+        }
+
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent.getAction().equals(ACTION_START_THIS_BITCH_UP)){
-            Log.i("MyService", "Service Started.");
+
             Notification notification = buildNotification();
             startForeground(10,notification);
             timer.scheduleAtFixedRate(new TimerTask(){ public void run() {onTimerTick();}}, 0, 1000L);
             isRunning = true;
-            Log.i("MyService", "Received start id " + startId + ": " + intent);
+
             initDrinkingInDB();
         }
         else if(intent.getAction().equals(ACTION_ADD_BEER)){
@@ -224,10 +252,11 @@ public class DrinkingService extends Service {
         }
         else if(intent.getAction().equals(ACTION_EXIT)){
             savePrevious();
-            sendPreviousMessageToUI();
-            sendUnbindMessageToUI();
-            stopForeground(true);
-            stopSelf();
+            stopDrinkingInDB();
+//            sendPreviousMessageToUI();
+//            sendUnbindMessageToUI();
+//            stopForeground(true);
+//            stopSelf();
         }
         else if(intent.getAction().equals(ACTION_REMOVE_BEER)){
             if(numberOfDrinks>0) numberOfDrinks -=1;
@@ -246,7 +275,7 @@ public class DrinkingService extends Service {
 
 
     private void onTimerTick() {
-      //  Log.i("TimerTick", "Timer doing work." + counter);
+
         try {
             if(BAC == 0){
                 beginningOfIntervalDrinks = numberOfDrinks;
@@ -258,10 +287,10 @@ public class DrinkingService extends Service {
             sendClockMessageToUI(counter);
             //updates the notification every 10 min
             if(counter%600 == 0) pushNotification();
-            Log.v("TimerTick", ""+counter);
+
         }
         catch (Throwable t) { //you should always ultimately catch all exceptions in timer tasks.
-            Log.e("TimerTick", "Timer Tick Failed.", t);
+
         }
     }
 
@@ -290,10 +319,10 @@ public class DrinkingService extends Service {
     public void onDestroy() {
         savePrevious();
         sendPreviousMessageToUI();
+        Log.v("Drinking Service","onDestroy");
         if (timer != null) {timer.cancel();}
         counter=0;
         nm.cancel(10); // Cancel the persistent notification.
-        Log.i("MyService", "Service Stopped.");
         isRunning = false;
         stopDrinkingInDB();
         super.onDestroy();
@@ -310,7 +339,7 @@ public class DrinkingService extends Service {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt(SettingsActivity.LAST_TIME_DRINKING,numberOfDrinks);
         editor.commit();
-        Log.v("MyService","saved info");
+
     }
     private void updateDrinksInDB(){
         db.collection(DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT)
@@ -324,10 +353,17 @@ public class DrinkingService extends Service {
         batch.commit();
     }
     private void stopDrinkingInDB(){
-        WriteBatch batch = db.batch();
-        DocumentReference userDoc = db.collection("users").document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT);
-        batch.update(userDoc,DB_IS_DRINKING, false);
-        batch.update(userDoc,DB_NUMBER_OF_DRINKS, 0);
-        batch.commit();
+        db.collection(DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT)
+                .update(DB_IS_DRINKING,false);
+        db.collection(DB_USERS_COLLECTION).document(mAuth.getCurrentUser().getEmail()).collection(DB_PARTY_COLLECTION).document(DB_DRINKING_DOCUMENT)
+                .update(DB_NUMBER_OF_DRINKS,0).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                sendPreviousMessageToUI();
+                sendUnbindMessageToUI();
+                stopForeground(true);
+                stopSelf();
+            }
+        });
     }
 }

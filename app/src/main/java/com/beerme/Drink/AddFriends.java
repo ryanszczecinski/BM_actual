@@ -1,12 +1,11 @@
-package com.beerme.beerme;
+package com.beerme.Drink;
 
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -16,8 +15,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.ArrayAdapter;
+
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -38,7 +38,6 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Transaction;
 import com.google.firebase.firestore.WriteBatch;
 
-import org.w3c.dom.Document;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,10 +45,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.beerme.beerme.DataBaseString.DB_DRINKING_DOCUMENT;
-import static com.beerme.beerme.DataBaseString.DB_IS_DRINKING;
-import static com.beerme.beerme.DataBaseString.DB_NUMBER_OF_DRINKS;
-import static com.beerme.beerme.DataBaseString.DB_PARTY_COLLECTION;
+import static com.beerme.Drink.DataBaseString.DB_DRINKING_DOCUMENT;
+import static com.beerme.Drink.DataBaseString.DB_IS_DRINKING;
+import static com.beerme.Drink.DataBaseString.DB_NUMBER_OF_DRINKS;
+import static com.beerme.Drink.DataBaseString.DB_PARTY_COLLECTION;
 
 public class AddFriends extends AppCompatActivity {
 private FirebaseAuth mAuth;
@@ -60,6 +59,7 @@ private ArrayList<String> list;
 private EditText findFriend;
 private int RC_SIGN_IN =  122;
 private ArrayList<String> friends;
+private ImageButton sendRequest;
 
 
     @Override
@@ -75,20 +75,20 @@ private ArrayList<String> friends;
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        sendRequest = findViewById(R.id.send_request);
         if (mUser!=null){
             getSupportActionBar().setTitle(mUser.getEmail());
             dbInteractions();
         }
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         findFriend = findViewById(R.id.AddFriendEditText);
-        findFriend.setOnKeyListener(new View.OnKeyListener() {
+        sendRequest.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
+            public void onClick(View view) {
                 if(mUser!= null) {
-                    if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
                         //hides the keyboard
-                        InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                        InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                         //Query for that name
                         DocumentReference friendsRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(findFriend.getText().toString()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIENDS_DOCUMENT);
                         friendsRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
@@ -107,13 +107,10 @@ private ArrayList<String> friends;
                             @Nullable
                             @Override
                             public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
-                                Log.v("transaction", "ran");
                                 DocumentReference friendRequestRef = db.collection(DataBaseString.DB_USERS_COLLECTION).document(findFriend.getText().toString()).collection(DataBaseString.DB_FRIENDS_COLLECTION).document(DataBaseString.DB_FRIEND_REQUEST_DOCUMENT);
                                 DocumentSnapshot friendRequestSnap = transaction.get(friendRequestRef);
-                                Log.v("transaction", "ran"+1);
                                 if (friendRequestSnap.exists()) {
                                     //entered correctly
-                                    Log.v("transaction", "ran"+2);
                                     ArrayList<String> friendRequests = (ArrayList<String>) friendRequestSnap.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
                                     //will add only if not already a friend and not in requests
                                     if(!friendRequests.contains(mUser.getEmail())&&!friends.contains(mUser.getEmail())){
@@ -126,7 +123,7 @@ private ArrayList<String> friends;
 
                                 }
                                 else{
-                                    Log.v("transaction", "DNE");
+
                                 }
                                 return null;
                             }
@@ -140,15 +137,15 @@ private ArrayList<String> friends;
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
                                         Toast.makeText(getApplicationContext(), "User Not Found", Toast.LENGTH_LONG).show();
-                                        Log.e("transaction","shit failed lol",e);
                                     }
                                 });
-                        return true;
-                    }
+
+
                 }
-                return false;
+
             }
         });
+
     }
 
     @Override
@@ -169,7 +166,6 @@ private ArrayList<String> friends;
         if (id == R.id.action_settings) {
             Intent i = new Intent(this, SettingsActivity.class);
             this.startActivity(i);
-            Log.v("settings", "settings selected");
             return true;
         } else if (id == R.id.Disclaimer) {
             new MainActivity.Disclaimer().show(getSupportFragmentManager(), "Disclaimer");
@@ -210,14 +206,12 @@ private ArrayList<String> friends;
                 if (task.isSuccessful()) {
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
-                        Log.d("FriendsQuery", "DocumentSnapshot data: " + document.getData());
-                        //TODO: put the array into an arrayadapter and attach a list view to it
                         list = (ArrayList<String>) document.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
                         ListView listView = findViewById(R.id.addFriendLV);
                         adapter = new FriendRequestAdapter(getApplicationContext(),list);
                         listView.setAdapter(adapter);
                     } else {
-                        Log.d("FriendsQuery", "No such document");
+
                     }
                 }
             }
@@ -227,18 +221,18 @@ private ArrayList<String> friends;
             public void onEvent(@Nullable DocumentSnapshot snapshot,
                                 @Nullable FirebaseFirestoreException e) {
                 if (e != null) {
-                    Log.w("FriendsSnapShot", "Listen failed.", e);
+
                     return;
                 }
                 if (snapshot != null && snapshot.exists()) {
-                    Log.d("FriendsSnapShot", "Current data: " + snapshot.getData());
+
                     list = (ArrayList<String>) snapshot.get(DataBaseString.DB_FRIEND_REQUEST_ARRAY);
                     ListView listView = findViewById(R.id.addFriendLV);
                     adapter = new FriendRequestAdapter(getApplicationContext(),list);
                     listView.setAdapter(adapter);
 
                 } else {
-                    Log.d("FriendsSnapShot", "Current data: null");
+
                 }
             }
         });
@@ -265,9 +259,7 @@ private ArrayList<String> friends;
                         if (task.isSuccessful()) {
                             DocumentSnapshot document = task.getResult();
                             if (document.exists()) {
-                                Log.d("Query", "DocumentSnapshot data: " + document.getData());
                             } else {
-                                Log.d("Query", "No such document creating one");
                                 WriteBatch batch = db.batch();
                                 Map<String, Object> userVal = new HashMap<>();
                                 userVal.put(DataBaseString.DB_USERNAME,mAuth.getCurrentUser().getDisplayName());
@@ -293,7 +285,6 @@ private ArrayList<String> friends;
 
                             }
                         } else {
-                            Log.d("Query", "get failed with ", task.getException());
                         }
                     }
                 });
